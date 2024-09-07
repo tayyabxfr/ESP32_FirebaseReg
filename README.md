@@ -1,4 +1,4 @@
-# ESP32 Firebase Sensor Registration
+# ESP32 Firebase Device Registration
 
 This project registers an ESP32 device with Firebase using user-provided credentials and sensor information. The device connects to a Wi-Fi network, gets the device ID from the user, and uploads it to the Firebase Realtime Database.
 
