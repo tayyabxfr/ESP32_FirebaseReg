@@ -49,7 +49,7 @@ void setup()
   String path = String("/") + macAddress + "/deviceID";
 
   if (Firebase.RTDB.setString(&fbdo, path.c_str(), deviceID)) 
-  {
+  {`
     Serial.println("Device Registered Successfully!");
   } 
   else 
@@ -149,11 +149,11 @@ void firebaseinit()
 
   /* Sign up */
   if (Firebase.signUp(&config, &auth, "", "")){
-    Serial.println("ok");
+    Serial.println("Connected to Firebase");
     signupOK = true;
   }
   else{
-    Serial.printf("%s\n", config.signer.signupError.message.c_str());
+    Serial.printf("(^_^) Poor Connection \n");
   }
 
   /* Assign the callback function for the long running token generation task */
