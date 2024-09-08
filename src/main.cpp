@@ -49,7 +49,7 @@ void setup()
   String path = String("/") + macAddress + "/deviceID";
 
   if (Firebase.RTDB.setString(&fbdo, path.c_str(), deviceID)) 
-  {`
+  {
     Serial.println("Device Registered Successfully!");
   } 
   else 
