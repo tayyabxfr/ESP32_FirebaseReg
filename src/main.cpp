@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <Firebase_ESP_Client.h>
+#include <string.h>  // Include string.h to use strlen
 
 String readserialinput();
 void wifiinit();
@@ -39,27 +40,28 @@ void setup()
   {
   getID(&deviceID);
   analyze(deviceID,&valid);
+
   if (valid == true)
   {
-  firebaseinit();
-  if (Firebase.ready() && signupOK )
-  {
+     firebaseinit();
+     if (Firebase.ready() && signupOK )
+     {
 
-  String macAddress = WiFi.macAddress();
-  String path = String("/") + macAddress + "/deviceID";
+        String macAddress = WiFi.macAddress();
+        String path = String("/") + macAddress + "/deviceID";
 
-  if (Firebase.RTDB.setString(&fbdo, path.c_str(), deviceID)) 
-  {
-    Serial.println("Device Registered Successfully!");
-  } 
-  else 
-  {
-    Serial.print("Failed to write data, reason: ");
-    Serial.println(fbdo.errorReason());
-  }
+        if (Firebase.RTDB.setString(&fbdo, path.c_str(), deviceID)) 
+        {
+            Serial.println("Device Registered Successfully!");
+        } 
+        else 
+        {
+            Serial.print("Failed to write data, reason: ");
+            Serial.println(fbdo.errorReason());
+        }
 
-  }
-  break;
+     }
+     break;
   }
   else
   {
@@ -73,21 +75,26 @@ void setup()
 String readserialinput()
 {
   String input = "";
-  while(1){
-  if (Serial.available() > 0)
-  {
-    char c = Serial.read();
-    if(c == '\n')
-    {
-      break;
+  while (true) {
+    if (Serial.available() > 0) {
+      char ch = Serial.read();
+      if (ch == '\n' || ch == '\r') {
+        // Ignore extra newline characters
+        if (Serial.peek() == '\n' || Serial.peek() == '\r') {
+          Serial.read();
+        }
+        break;
+      } else if (ch == 8 || ch == 127) { // Backspace handling
+        if (input.length() > 0) {
+          input.remove(input.length() - 1);
+          Serial.print("\b \b");
+        }
+      } else if (ch >= 32 && ch <= 126) { // Accept visible ASCII characters
+        input += ch;
+        Serial.print(ch);
+      }
     }
-    else
-    {
-      input += c;
-      Serial.print(c);
-    }
-  }
-  delay(10);
+    delay(10);
   }
   Serial.println();
   input.trim(); // Remove any leading or trailing whitespace
@@ -96,21 +103,26 @@ String readserialinput()
 String readpass()
 {
   String input = "";
-  while(1){
-  if (Serial.available() > 0)
-  {
-    char c = Serial.read();
-    if(c == '\n')
-    {
-      break;
+  while (true) {
+    if (Serial.available() > 0) {
+      char ch = Serial.read();
+      if (ch == '\n' || ch == '\r') {
+        // Ignore extra newline characters
+        if (Serial.peek() == '\n' || Serial.peek() == '\r') {
+          Serial.read();
+        }
+        break;
+      } else if (ch == 8 || ch == 127) { // Backspace handling
+        if (input.length() > 0) {
+          input.remove(input.length() - 1);
+          Serial.print("\b \b");
+        }
+      } else if (ch >= 32 && ch <= 126) { // Accept visible ASCII characters
+        input += ch;
+        Serial.print("*");
+      }
     }
-    else
-    {
-      input += c;
-      Serial.print("*");
-    }
-  }
-  delay(10);
+    delay(10);
   }
   Serial.println();
   input.trim(); // Remove any leading or trailing whitespace
@@ -124,7 +136,7 @@ void wifiinit()
 
   // Prompt user for Password
   Serial.println("Enter WiFi Password: ");
-  pass = readpass();  // Call function to read input
+  pass =  readpass();// Call function to read input
   WiFi.begin(ssid, pass);
   Serial.println("Connecting to Wi-Fi");
 
@@ -141,6 +153,7 @@ void getID(String *deviceID)
   Serial.println("SensorID for 1/3/6/8/9/12 slots : SMx-yy (x -> # of slots (1/3/6/8/9/12) , (yyy -> unique 3 digit ID)");
   Serial.println("Enter Sensor ID : ");
   *deviceID = readserialinput();
+  
 }
 void firebaseinit()
 {
@@ -153,7 +166,7 @@ void firebaseinit()
     signupOK = true;
   }
   else{
-    Serial.printf("(^_^) Poor Connection \n");
+    Serial.printf("%s\n", config.signer.signupError.message.c_str());
   }
 
   /* Assign the callback function for the long running token generation task */
@@ -166,21 +179,31 @@ void firebaseinit()
 void analyze(String deviceID,bool *valid)
 {
  const char* did_cstr = deviceID.c_str();
- if (did_cstr[0] == 83 && did_cstr[1] == 77)
+ if (strlen(did_cstr) < 8)
  {
- if ((did_cstr[2] == '-' || did_cstr[2] == '1') || (did_cstr[2] == '3') || (did_cstr[2] == '6') || (did_cstr[2] == '8') || (did_cstr[2] == '9') || (did_cstr[3] == '2'))
- {
-  Serial.println("It is Valid ID");
-  *valid = 1;
+    if (did_cstr[0] == 83 && did_cstr[1] == 77)
+    {
+       if ((did_cstr[2] == '-' || did_cstr[2] == '1') || (did_cstr[2] == '3') || (did_cstr[2] == '6') || (did_cstr[2] == '8') || (did_cstr[2] == '9') || (did_cstr[3] == '2'))
+       {
+         Serial.println("It is Valid ID");
+        *valid = 1;
+       }
+       else
+       {
+         Serial.println("ERROR : InValid ID Format");
+       }
+    }
+    else
+    {
+       Serial.println("ERROR : [s,m] LOWER CASE LETTERS NOT ALLOWED");
+       Serial.println("s -> S , m -> M");
+       delay(1500);
+    }
  }
  else
  {
-  Serial.println("ERROR : InValid ID Format");
- }}
- else
- {
-  Serial.println("ERROR : [s,m] LOWER CASE LETTERS NOT ALLOWED");
-  Serial.println("s -> S , m -> M");
+  Serial.println("ERROR : [MORE THAN 7 CHARACTERS]");
+  delay(1500);
  }
 }
 void loop()
